@@ -16,6 +16,8 @@ main:
 	addi $s5, $t0, 0		#Move input to Register
 	add $s3, $zero, $zero   #Intialize Register to Zero
 
+#main program must call Subprogram 2 for conversion and call Subprogram 3 for output.
+
 length_of_input:				#Count length of Input
 	lb $t1, 0($s5)
 	beq $t1, 0, revert
@@ -24,3 +26,12 @@ length_of_input:				#Count length of Input
 	addi $s5, $s5, 1 
 	j length_of_input
 
+revert:					#To revert back to last position in Input, rather than /n or NULL
+	addi $s3, $s3, -4
+
+subprogram1: 	#converts a single hexadecimal character to a decimal integer
+
+subprogram2:	# call Subprogram 1 to get the decimal value of each of the characters in the string
+				#Values must be returned via the stack
+				
+subprogram3:	#displays an unsigned decimal integer. The stack must be used to pass parameters into the subprogram. No values are returned
