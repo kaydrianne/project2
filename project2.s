@@ -1,73 +1,56 @@
-.data
-	create_space: .space 1001	#Create space for 1000 characters and NULL
-	error: .asciiz "NaN"		#not a number string 				
-	newline: .asciiz "\n"							
+	.data
+create_space: .space 1001
+current_string: .space 1001
 
+error: .asciiz "NaN"
+sub_p2_test: .asciiz "sub program 2 called"
+newline:  .asciiz "\n"
 
-.text	
+	.text
 main:
-	li $v0, 8				#Syscall for v0 = 8 is Read String
-	la $t0, create_space	#Create Space in $t0
-	la $a0, 0($t0)			#Loads Input into Argument
-	la $a1, 1001				#Loads Length of Input
-	syscall 				#Calls syscall 8 - Read String
+	li $v0, 8
+	la $a0, create_space
+	li $a1, 1001
+	syscall
+	la $s5 create_space
+	la $t2, current_string
 
-	addi $t7, $t0, 8		#Move 9th byte of Input to Register
-	addi $s5, $t0, 0		#Move input to Register
-	add $s3, $zero, $zero   #Intialize Register to Zero
-
-
-length_of_input:				#Count length of Input
+#	loop to read each character from the input
+length_of_input:
 	lb $t1, 0($s5)
-	beq $t1, 0, revert
-	beq $t1, 10, revert
-	addi $s3, $s3, 4
-	addi $s5, $s5, 1 
+	beq $t1, 44, call_sub_programs
+	beq $t1, 0, call_sub_programs
+	beq $t1, 10, call_sub_programs
+	j update_state
+
+#	only call sub_programs once ',' or '\n', or '\0' is reached
+call_sub_programs:
+	sb $zero, 1($t2)
+	jal sub_program_2
+	beq $t1, 0, exit
+	beq $t1, 10, exit
+	la $t2, current_string
+	j dont_store_byte
+
+#	store each read character in temporary string
+update_state:
+	sb $t1, 0($t2)
+	addi $t2, $t2, 1
+
+#	skip past storing last byte read when beginning new string processing
+dont_store_byte:
+	addi $s5, $s5, 1
 	j length_of_input
 
-revert:					#To revert back to last position in Input, rather than /n or NULL
-	addi $s3, $s3, -4
-	
-subprogram1(char, position): 	#converts a single hexadecimal character to a decimal integer
+#	currently simply prints out hex string read in
+sub_program_2:
+	li $v0, 4
+	la $a0, current_string
+	syscall
+	la $a0, newline
+	syscall
+	jr $ra
 
-# {
-# 	if (position == 1)		
-# 	{
-# 		return hex_value
-# 	}
-# if (char is valid hex)
-# {
-# 	return hex_value shifted by shift_amount
-# 	#value  shifted left by (position - 1) * 4
-# }
-# else
-# {
-# 		return “NaN”
-# 	}
-
-# }
-
-
-subprogram2(arr, i, j):	# call Subprogram 1 to get the decimal value of each of the characters in the string
-# {
-# 	shift_position = j - i		#gets length of string
-# sum = 0
-# 	if (shift_position > 8)	#when more than 32 bits it is too large
-# 	{
-# 		return “Too large”
-# 	}
-# 	while (i < j):
-# 		sum += SubProg1(arr[i], shift_position)	#increments sum
-# 		if (sum is “NaN”)
-# 		{
-# 			return “NaN”
-# 		}
-# 		i++				
-# 		shift_position--
-# 	return sum
-# }
-
-				
-				
-subprogram3:	#displays an unsigned decimal integer. The stack must be used to pass parameters into the subprogram. No values are returned
-#print
+exit:
+	li $v0, 10
+	syscall
